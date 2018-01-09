@@ -2,8 +2,6 @@
 # -*-coding:utf-8 -*-
 import subprocess
 import time
-import _thread
-
 
 class Host:
     user = ''
