@@ -120,7 +120,7 @@ class SyncService:
         print(cmd)
         if Config.isExecute is True:
             read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0], 'utf8'))
+            print(str(read[0]))
         return
 
     def tPrefSyncAll(self, fromnode, tonode):
@@ -135,7 +135,7 @@ class SyncService:
         print(cmd)
         if Config.isExecute is True:
             read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0], 'utf8'))
+            print(str(read[0]))
         return
 
     def allSchemaSync(self, mngNode, tonode):
@@ -145,7 +145,7 @@ class SyncService:
         )
         if Config.isExecute is True:
             read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0], 'utf8'))
+            print(str(read[0]))
 
         filename = ("{0}.{1}.patch.sql".format(tonode.db.name, time.strftime("%Y%m%d", time.localtime())))
         self.restore(tonode, filename)
@@ -239,7 +239,7 @@ if __name__ == "__main__":
 
     for result in result_list:
         print(result[0])
-        print(str(result[1].read(),"utf8"))
+        print(str(result[1].read()))
 
     for node in Config.sitesNodes:
         sync.allSchemaSyncGo(Config.intraTestNode, node)
