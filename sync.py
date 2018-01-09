@@ -226,7 +226,7 @@ if __name__ == "__main__":
 
     Config.isExecute = True
 
-    # # filename = sync.dump(Config.stdTestNode)
+    # filename = sync.dump(Config.stdTestNode)
     # filename = "fix.sql"
     # for node in Config.sitesNodes:
     #     sync.restore(node, filename=filename)
@@ -236,15 +236,15 @@ if __name__ == "__main__":
     allnodes.extend(Config.sitesNodes)
 
     result_list = []
-    # for node in allnodes:
-    #     sync.tPrefSchemaSync(Config.intraMngNode, node)
-    #     aResultlist = sync.tPrefDataSync(Config.intraMngNode, node)
-    #
-    #     result_list.extend(aResultlist)
+    for node in allnodes:
+        sync.tPrefSchemaSync(Config.intraMngNode, node)
+        aResultlist = sync.tPrefDataSync(Config.intraMngNode, node)
 
-    # for result in result_list:
-    #     print(result[0])
-    #     print(str(result[1].read()))
+        result_list.extend(aResultlist)
+
+    for result in result_list:
+        print(result[0])
+        print(str(result[1].read()))
 
     for node in Config.sitesNodes:
         sync.allSchemaSyncGo(Config.intraTestNode, node)
