@@ -3,6 +3,7 @@
 import subprocess
 import time
 
+
 class Host:
     user = ''
     passwd = ''
@@ -93,7 +94,7 @@ class SyncService:
         print(cmd)
         if Config.isExecute is True:
             read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0], 'utf8'))
+            print(str(read[0]))
 
     def tPrefDataSync(self, fromnode, tonode):
         result_list = []
@@ -139,15 +140,19 @@ class SyncService:
         return
 
     def allSchemaSync(self, mngNode, tonode):
-        cmd = "schemasync --charset=utf8 -a mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9}".format(
+        tag = str(tonode.host.ip).replace(".", "-")
+        cmd = "schemasync --charset=utf8 -a mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} ".format(
             mngNode.host.user, mngNode.host.passwd, mngNode.host.ip, mngNode.host.port, mngNode.db.name,
-            tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name
+            tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name,
+            tag
         )
+        print(cmd)
         if Config.isExecute is True:
             read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
             print(str(read[0]))
 
-        filename = ("{0}.{1}.patch.sql".format(tonode.db.name, time.strftime("%Y%m%d", time.localtime())))
+        filename = (
+            "{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
         self.restore(tonode, filename)
         return
 
@@ -231,15 +236,15 @@ if __name__ == "__main__":
     allnodes.extend(Config.sitesNodes)
 
     result_list = []
-    for node in allnodes:
-        sync.tPrefSchemaSync(Config.intraMngNode, node)
-        aResultlist = sync.tPrefDataSync(Config.intraMngNode, node)
+    # for node in allnodes:
+    #     sync.tPrefSchemaSync(Config.intraMngNode, node)
+    #     aResultlist = sync.tPrefDataSync(Config.intraMngNode, node)
+    #
+    #     result_list.extend(aResultlist)
 
-        result_list.extend(aResultlist)
-
-    for result in result_list:
-        print(result[0])
-        print(str(result[1].read()))
+    # for result in result_list:
+    #     print(result[0])
+    #     print(str(result[1].read()))
 
     for node in Config.sitesNodes:
         sync.allSchemaSyncGo(Config.intraTestNode, node)
