@@ -141,7 +141,7 @@ class SyncService:
 
     def allSchemaSync(self, mngNode, tonode):
         tag = str(tonode.host.ip).replace(".", "-")
-        cmd = "schemasync --charset=utf8 -a mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} ".format(
+        cmd = "schemasync --charset=utf8 mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} ".format(
             mngNode.host.user, mngNode.host.passwd, mngNode.host.ip, mngNode.host.port, mngNode.db.name,
             tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name,
             tag
@@ -166,14 +166,10 @@ class Config:
 
     managedb = Database('saasops_manage')
 
-    vebdb = Database('saasops_veb')
-    lbdb = Database('saasops_lb')
     dfdb = Database('saasops_df')
+    lbdb = Database('saasops_lb')
     testdb = Database('saasops_test')
-
-    saasopsdb = Database('saasops')
-    # emptydb = Database('saasops_empty')
-    # empty2db = Database('saasops_empty2')
+    vebdb = Database('saasops_veb')
 
     intraMngNode = Node(intrahost, managedb)
     intraTestNode = Node(intrahost, testdb)
@@ -183,16 +179,15 @@ class Config:
     manageNodes.append(Node(jphost, managedb))
 
     sitesNodes = []
-    sitesNodes.append(Node(intrahost, testdb))
-    sitesNodes.append(Node(intrahost, saasopsdb))
-    sitesNodes.append(Node(intrahost, vebdb))
     sitesNodes.append(Node(intrahost, dfdb))
-    # sitesNodes.append(Node(intrahost, emptydb))
-    # sitesNodes.append(Node(intrahost, empty2db))
+    sitesNodes.append(Node(intrahost, lbdb))
+    sitesNodes.append(Node(intrahost, testdb))
+    sitesNodes.append(Node(intrahost, vebdb))
 
+    sitesNodes.append(Node(hkhost, dfdb))
+    sitesNodes.append(Node(hkhost, lbdb))
     sitesNodes.append(Node(hkhost, testdb))
     sitesNodes.append(Node(hkhost, vebdb))
-    sitesNodes.append(Node(hkhost, dfdb))
 
     sitesNodes.append(Node(jphost, dfdb))
     sitesNodes.append(Node(jphost, vebdb))
@@ -239,10 +234,10 @@ if __name__ == "__main__":
         sync.tPrefSchemaSync(Config.intraMngNode, node)
 
     for node in Config.sitesNodes:
-        sync.allSchemaSyncGo(Config.intraTestNode, node)
+        sync.allSchemaSync(Config.intraTestNode, node)
 
     for node in Config.manageNodes:
-        sync.allSchemaSyncGo(Config.intraMngNode, node)
+        sync.allSchemaSyncalter(Config.intraMngNode, node)
 
     result_list = []
     for node in allnodes:
