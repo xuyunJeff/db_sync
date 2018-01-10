@@ -234,10 +234,10 @@ if __name__ == "__main__":
         sync.tPrefSchemaSync(Config.intraMngNode, node)
 
     for snode in Config.sitesNodes:
-        sync.allSchemaSync(Config.intraTestNode, snode)
+        sync.allSchemaSyncGo(Config.intraTestNode, snode)
 
     for mnode in Config.manageNodes:
-        sync.allSchemaSync(Config.intraMngNode, mnode)
+        sync.allSchemaSyncGo(Config.intraMngNode, mnode)
 
     result_list = []
     for alnode in allnodes:
