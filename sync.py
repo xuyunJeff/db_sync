@@ -233,15 +233,15 @@ if __name__ == "__main__":
     for node in allnodes:
         sync.tPrefSchemaSync(Config.intraMngNode, node)
 
-    for node in Config.sitesNodes:
-        sync.allSchemaSync(Config.intraTestNode, node)
+    for snode in Config.sitesNodes:
+        sync.allSchemaSync(Config.intraTestNode, snode)
 
-    for node in Config.manageNodes:
-        sync.allSchemaSyncalter(Config.intraMngNode, node)
+    for mnode in Config.manageNodes:
+        sync.allSchemaSync(Config.intraMngNode, mnode)
 
     result_list = []
-    for node in allnodes:
-        aResultlist = sync.tPrefDataSync(Config.intraMngNode, node)
+    for alnode in allnodes:
+        aResultlist = sync.tPrefDataSync(Config.intraMngNode, alnode)
         result_list.extend(aResultlist)
     for result in result_list:
         print(result[0])
