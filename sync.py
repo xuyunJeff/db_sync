@@ -141,7 +141,7 @@ class SyncService:
 
     def allSchemaSync(self, mngNode, tonode):
         tag = str(tonode.host.ip).replace(".", "-")
-        cmd = "schemasync --charset=utf8 mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} ".format(
+        cmd = "python sync/schemasync.py -c --charset=utf8 mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} ".format(
             mngNode.host.user, mngNode.host.passwd, mngNode.host.ip, mngNode.host.port, mngNode.db.name,
             tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name,
             tag
@@ -202,6 +202,7 @@ class Config:
         't_cp_site',
         't_cp_siteurl',
         't_gm_api',
+        't_gm_apiprefix',
         't_gm_case',
         't_gm_caseapi',
         't_gm_cat',
