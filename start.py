@@ -2,6 +2,7 @@
 # -*-coding:utf-8 -*-
 import subprocess
 import time
+from multiprocessing import Pool
 
 
 class Host:
@@ -93,8 +94,7 @@ class SyncService:
             filename)
         print(cmd)
         if Config.isExecute is True:
-            read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0]))
+            out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
 
     def tPrefDataSync(self, fromnode, tonode):
         result_list = []
@@ -103,45 +103,51 @@ class SyncService:
             cmd = u"pt-table-sync --print --execute --charset=utf8 u={0},p={1},h={2},P={3},D={4},t={5} u={6},p={7},h={8},P={9},D={10},t={11}".format \
                 (fromnode.host.user, fromnode.host.passwd, fromnode.host.ip, fromnode.host.port, fromnode.db.name, tbl,
                  tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name, tbl)
-            result.append(cmd)
+            print(cmd)
             if Config.isExecute is True:
-                read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).stdout
-                result.append(read)
-                # print(str(read.read(), 'utf8'))
-                result_list.append(result)
+                out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+
         return result_list
 
     def tPrefSchemaSync(self, mngNode, tonode):
         tblstr = ",".join(Config.tables)
-        print(tblstr)
-        cmd = "bin/mysql-schema-sync -sync -drop -source \"{0}:{1}@({2}:{3})/{4}\" -dest \"{5}:{6}@({7}:{8})/{9}\" -tables {10}".format(
+        iptag = str(tonode.host.ip).replace(".", "-")
+        timetag = time.strftime("%H%M%S", time.localtime())
+        tag = "%s-tpre-%s" % (iptag, timetag)
+        cmd = "python3 schemasync.py -c --charset=utf8 mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} --tables {11} ".format(
             mngNode.host.user, mngNode.host.passwd, mngNode.host.ip, mngNode.host.port, mngNode.db.name,
-            tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name, tblstr
+            tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name,
+            tag, tblstr
         )
         print(cmd)
         if Config.isExecute is True:
-            read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0]))
+            out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+
+        filename = ("{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
+        self.restore(tonode, filename)
         return
 
     def tPrefSyncAll(self, fromnode, tonode):
         self.tPrefSchemaSync(fromnode, tonode)
         self.tPrefDataSync(fromnode, tonode)
 
-    def allSchemaSyncGo(self, mngNode, tonode):
-        cmd = "bin/mysql-schema-sync -sync -drop -source \"{0}:{1}@({2}:{3})/{4}\" -dest \"{5}:{6}@({7}:{8})/{9}\" ".format(
-            mngNode.host.user, mngNode.host.passwd, mngNode.host.ip, mngNode.host.port, mngNode.db.name,
-            tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name
-        )
-        print(cmd)
-        if Config.isExecute is True:
-            read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0]))
-        return
+    # def allSchemaSyncGo(self, mngNode, tonode):
+    #     cmd = "bin/mysql-schema-sync -sync -drop -source \"{0}:{1}@({2}:{3})/{4}\" -dest \"{5}:{6}@({7}:{8})/{9}\" ".format(
+    #         mngNode.host.user, mngNode.host.passwd, mngNode.host.ip, mngNode.host.port, mngNode.db.name,
+    #         tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name
+    #     )
+    #     print(cmd)
+    #     if Config.isExecute is True:
+    #         read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+    #         print(str(read[0]))
+    #     return
 
     def allSchemaSync(self, mngNode, tonode):
-        tag = str(tonode.host.ip).replace(".", "-")
-        cmd = "python sync/schemasync.py -c --charset=utf8 mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} ".format(
+        tblstr = ",".join(Config.tables)
+        iptag = str(tonode.host.ip).replace(".", "-")
+        timetag = time.strftime("%H%M%S", time.localtime())
+        tag = "%s-all-%s" % (iptag, timetag)
+        cmd = "python3 schemasync.py -c --charset=utf8 mysql://{0}:{1}@{2}:{3}/{4}  mysql://{5}:{6}@{7}:{8}/{9} --tag {10} ".format(
             mngNode.host.user, mngNode.host.passwd, mngNode.host.ip, mngNode.host.port, mngNode.db.name,
             tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name,
             tag
@@ -151,9 +157,8 @@ class SyncService:
             read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
             print(str(read[0]))
 
-        filename = (
-            "{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
-        self.restore(tonode, filename)
+            filename = ("{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
+            self.restore(tonode, filename)
         return
 
 
@@ -231,19 +236,18 @@ if __name__ == "__main__":
     allnodes.extend(Config.manageNodes)
     allnodes.extend(Config.sitesNodes)
 
+    pool = Pool(processes=100)
     for node in allnodes:
-        sync.tPrefSchemaSync(Config.intraMngNode, node)
+        result = pool.apply_async(sync.tPrefSchemaSync, (Config.intraMngNode, node))
 
     for snode in Config.sitesNodes:
-        sync.allSchemaSyncGo(Config.intraTestNode, snode)
+        result = pool.apply_async(sync.allSchemaSync, (Config.intraTestNode, snode))
 
     for mnode in Config.manageNodes:
-        sync.allSchemaSyncGo(Config.intraMngNode, mnode)
+        result = pool.apply_async(sync.allSchemaSync, (Config.intraMngNode, mnode))
 
-    result_list = []
     for alnode in allnodes:
-        aResultlist = sync.tPrefDataSync(Config.intraMngNode, alnode)
-        result_list.extend(aResultlist)
-    for result in result_list:
-        print(result[0])
-        print(str(result[1].read()))
+        result = pool.apply_async(sync.tPrefDataSync, (Config.intraMngNode, alnode))
+
+    pool.close()
+    pool.join()

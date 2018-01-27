@@ -79,13 +79,13 @@ def parse_cmd_line(fn):
                           dest="sync_procedure",
                           action="store_true",
                           default=False,
-                          help="sync the AUTO_INCREMENT value for each table.")
+                          help="sync the schema procedure.")
 
         parser.add_option("-a", "--sync-auto-inc",
                           dest="sync_auto_inc",
                           action="store_true",
                           default=False,
-                          help="sync the schema procedure.")
+                          help="sync the AUTO_INCREMENT value for each table.")
 
         parser.add_option("-c", "--sync-comments",
                           dest="sync_comments",
@@ -327,6 +327,7 @@ def app(sourcedb='', targetdb='', tables='', version_filename=False,
             return 1
 
     return 0
+
 
 def main():
     try:
