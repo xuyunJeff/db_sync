@@ -154,11 +154,10 @@ class SyncService:
         )
         print(cmd)
         if Config.isExecute is True:
-            read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-            print(str(read[0]))
+            out,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
 
-            filename = ("{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
-            self.restore(tonode, filename)
+        filename = ("{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
+        self.restore(tonode, filename)
         return
 
 
