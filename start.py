@@ -97,17 +97,14 @@ class SyncService:
             out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
 
     def tPrefDataSync(self, fromnode, tonode):
-        result_list = []
         for tbl in Config.tables:
-            result = []
             cmd = u"pt-table-sync --print --execute --charset=utf8 u={0},p={1},h={2},P={3},D={4},t={5} u={6},p={7},h={8},P={9},D={10},t={11}".format \
                 (fromnode.host.user, fromnode.host.passwd, fromnode.host.ip, fromnode.host.port, fromnode.db.name, tbl,
                  tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name, tbl)
             print(cmd)
             if Config.isExecute is True:
                 out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-
-        return result_list
+        return
 
     def tPrefSchemaSync(self, mngNode, tonode):
         tblstr = ",".join(Config.tables)
@@ -127,9 +124,9 @@ class SyncService:
         self.restore(tonode, filename)
         return
 
-    def tPrefSyncAll(self, fromnode, tonode):
-        self.tPrefSchemaSync(fromnode, tonode)
-        self.tPrefDataSync(fromnode, tonode)
+    # def tPrefSyncAll(self, fromnode, tonode):
+    #     self.tPrefSchemaSync(fromnode, tonode)
+    #     self.tPrefDataSync(fromnode, tonode)
 
     # def allSchemaSyncGo(self, mngNode, tonode):
     #     cmd = "bin/mysql-schema-sync -sync -drop -source \"{0}:{1}@({2}:{3})/{4}\" -dest \"{5}:{6}@({7}:{8})/{9}\" ".format(
@@ -154,10 +151,11 @@ class SyncService:
         )
         print(cmd)
         if Config.isExecute is True:
-            out,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+            read = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+            print(str(read[0]))
 
-        filename = ("{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
-        self.restore(tonode, filename)
+            filename = ("{0}_{1}.{2}.patch.sql".format(tonode.db.name, tag, time.strftime("%Y%m%d", time.localtime())))
+            self.restore(tonode, filename)
         return
 
 
@@ -170,31 +168,39 @@ class Config:
 
     managedb = Database('saasops_manage')
 
-    dfdb = Database('saasops_df')
-    lbdb = Database('saasops_lb')
-    testdb = Database('saasops_test')
-    vebdb = Database('saasops_veb')
-
+    sitedb = {
+        'dfdb': Database('saasops_df'),
+        'lbdb': Database('saasops_lb'),
+        'testdb': Database('saasops_test'),
+        'vebdb': Database('saasops_veb'),
+        'y68db': Database('saasops_y68'),
+        'vbetdb': Database('saasops_vbet'),
+        'aaadb': Database('saasops_aaa'),
+        'mgmdb': Database('saasops_mgm'),
+        'kkkdb': Database('saasops_kkk'),
+        'jshdb': Database('saasops_jsh'),
+        'boddb': Database('saasops_bod'),
+        'xhidb': Database('saasops_xhi'),
+        'ajsdb': Database('saasops_ajs'),
+        'djdb': Database('saasops_dj'),
+        'tgodb': Database('saasops_tgo'),
+        'xtddb': Database('saasops_xtd'),
+        'cccdb': Database('saasops_ccc'),
+        'verdb': Database('saasops_ver'),
+        'xpjdb': Database('saasops_xpj'),
+    }
     intraMngNode = Node(intrahost, managedb)
-    intraTestNode = Node(intrahost, testdb)
+    intraTestNode = Node(intrahost, sitedb['testdb'])
 
     manageNodes = []
     manageNodes.append(Node(hkhost, managedb))
     manageNodes.append(Node(jphost, managedb))
 
     sitesNodes = []
-    sitesNodes.append(Node(intrahost, dfdb))
-    sitesNodes.append(Node(intrahost, lbdb))
-    sitesNodes.append(Node(intrahost, testdb))
-    sitesNodes.append(Node(intrahost, vebdb))
-
-    sitesNodes.append(Node(hkhost, dfdb))
-    sitesNodes.append(Node(hkhost, lbdb))
-    sitesNodes.append(Node(hkhost, testdb))
-    sitesNodes.append(Node(hkhost, vebdb))
-
-    sitesNodes.append(Node(jphost, dfdb))
-    sitesNodes.append(Node(jphost, vebdb))
+    for k, v in sitedb.items():
+        sitesNodes.append(Node(intrahost, v))
+        sitesNodes.append(Node(hkhost, v))
+        sitesNodes.append(Node(jphost, v))
 
     allSyncNodes = []
 
@@ -235,7 +241,7 @@ if __name__ == "__main__":
     allnodes.extend(Config.manageNodes)
     allnodes.extend(Config.sitesNodes)
 
-    pool = Pool(processes=100)
+    pool = Pool(processes=5)
     for node in allnodes:
         result = pool.apply_async(sync.tPrefSchemaSync, (Config.intraMngNode, node))
 
