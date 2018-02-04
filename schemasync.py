@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+# !/usr/bin/python3
+import asyncio
 import logging
 import optparse
 import sys
@@ -6,7 +7,6 @@ import sys
 from schemaobject import connection, SchemaObject
 from syncdb import *
 from utils import *
-import asyncio
 
 __author__ = """
 Mitch Matuson
@@ -211,8 +211,13 @@ async def app(sourcedb='', targetdb='', tables='', version_filename=False,
         logging.error("Target database name not provided. Exiting.")
         return 1
 
-    source_obj = SchemaObject(sourcedb, charset, table_names=tables)
-    target_obj = SchemaObject(targetdb, charset, table_names=tables)
+    source_obj = SchemaObject()
+    target_obj = SchemaObject()
+
+    srcfut = asyncio.ensure_future(source_obj.build_database(sourcedb, charset, table_names=tables))
+    tagfut = asyncio.ensure_future(target_obj.build_database(targetdb, charset, table_names=tables))
+
+    await asyncio.gather(srcfut, tagfut)
 
     if compare_version(source_obj.version, '5.0.0') < 0:
         logging.error("%s requires MySQL version 5.0+ (source is v%s)"
@@ -340,8 +345,11 @@ async def main():
 
 
 if __name__ == "__main__":
+    start = datetime.datetime.now()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
+    deltar = datetime.datetime.now() - start
+    print(deltar)
 
 '''
 -c

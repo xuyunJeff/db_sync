@@ -2,7 +2,7 @@ import re
 from schemaobject.collections import OrderedDict
 
 
-def trigger_schema_builder(database):
+async def trigger_schema_builder(database):
     conn = database.parent.connection
 
     t = OrderedDict()
@@ -14,7 +14,7 @@ def trigger_schema_builder(database):
             WHERE TRIGGER_SCHEMA='%s'
         """
 
-    triggers = conn.execute(sql % database.name)
+    triggers = await conn.execute(sql % database.name)
 
     if not triggers:
         return t

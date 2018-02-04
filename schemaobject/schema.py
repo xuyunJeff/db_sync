@@ -26,18 +26,26 @@ class SchemaObject(object):
 
     """
 
-    def __init__(self, connection_url, charset, table_names=None):
+    def __init__(self):
+        self.databases = None
+        self.connection = None
+        self.host = None
+        self.port = None
+        self.user = None
+        self.table_names = None
+        self.version = None
 
-        self._databases = None
-
+    async def build_database(self, connection_url, charset, table_names=None):
         self.connection = DatabaseConnection()
-        self.connection.connect(connection_url, charset)
+        await self.connection.connect(connection_url, charset)
+        self.version = await self.connection.version()
 
         self.host = self.connection.host
         self.port = self.connection.port
         self.user = self.connection.user
         self.table_names = table_names
-        self.version = self.connection.version
+
+        self.databases = await database_schema_builder(instance=self)
 
     @property
     def selected(self):
@@ -51,22 +59,3 @@ class SchemaObject(object):
             return self.databases[self.connection.db]
         else:
             return None
-
-    @property
-    def databases(self):
-        """
-        Lazily loaded dictionary of the databases within this MySQL instance.
-
-        See DatabaseSchema for usage::
-
-          #if database name is specified in the connection url
-          >>> len(schema.databases)
-          1
-          >>> schema.databases.keys()
-          ['sakila']
-
-        """
-        if self._databases is None:
-            self._databases = database_schema_builder(instance=self)
-
-        return self._databases

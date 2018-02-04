@@ -1,7 +1,7 @@
 from schemaobject.collections import OrderedDict
 
 
-def column_schema_builder(table):
+async def column_schema_builder(table):
     """
     Returns a dictionary loaded with all of the columns availale in the table.
     ``table`` must be an instance of TableSchema.
@@ -22,7 +22,7 @@ def column_schema_builder(table):
           AND TABLE_NAME='%s'
           ORDER BY ORDINAL_POSITION
           """
-    columns = conn.execute(sql % (table.parent.name, table.name))
+    columns = await conn.execute(sql % (table.parent.name, table.name))
     if not columns:
         return cols
 

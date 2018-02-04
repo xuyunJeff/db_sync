@@ -2,7 +2,7 @@ import re
 from schemaobject.collections import OrderedDict
 
 
-def procedure_schema_builder(database):
+async def procedure_schema_builder(database):
     conn = database.parent.connection
 
     p = OrderedDict()
@@ -14,7 +14,7 @@ def procedure_schema_builder(database):
             AND ROUTINE_SCHEMA='%s'
         """
 
-    procedures = conn.execute(sql % database.name)
+    procedures = await conn.execute(sql % database.name)
 
     if not procedures:
         return p
@@ -22,7 +22,7 @@ def procedure_schema_builder(database):
     for procedure in procedures:
         pname = procedure['ROUTINE_NAME']
         sql = "SHOW CREATE PROCEDURE %s"
-        proc_desc = conn.execute(sql % pname)
+        proc_desc = await conn.execute(sql % pname)
         if not proc_desc:
             continue
 

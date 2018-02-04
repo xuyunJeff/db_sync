@@ -2,7 +2,7 @@ import re
 from schemaobject.collections import OrderedDict
 
 
-def view_schema_builder(database):
+async def view_schema_builder(database):
     conn = database.parent.connection
 
     v = OrderedDict()
@@ -14,7 +14,7 @@ def view_schema_builder(database):
         ORDER BY TABLE_NAME
         """
 
-    views = conn.execute(sql % database.name)
+    views = await conn.execute(sql % database.name)
 
     if not views:
         return v
@@ -22,7 +22,7 @@ def view_schema_builder(database):
     for view in views:
         vname = view['TABLE_NAME']
         sql = "SHOW CREATE VIEW %s"
-        view_desc = conn.execute(sql % vname)
+        view_desc = await conn.execute(sql % vname)
         if not view_desc:
             continue
 

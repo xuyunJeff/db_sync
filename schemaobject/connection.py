@@ -64,32 +64,34 @@ class DatabaseConnection(object):
         self.host = None
         self.port = None
         self.user = None
+        self.pools = None
 
-    @property
+    # @property
     async def version(self):
         result = await self.execute("SELECT VERSION() as version")
         return result[0]['version']
 
     async def execute(self, sql, values=None):
-        cursor = await self._db.cursor()
-        # if isinstance(values, (basestring, unicode)):
-        if isinstance(values, str):
-            values = (values,)
-        await cursor.execute(sql, values)
+        with (await self._db) as conn:
+            cursor = await conn.cursor()
+            # cursor = await self._db.cursor()
+            # if isinstance(values, (basestring, unicode)):
+            if isinstance(values, str):
+                values = (values,)
+            await cursor.execute(sql, values)
 
-        if not cursor.rowcount:
-            return None
+            if not cursor.rowcount:
+                return None
 
-        fields = [field[0] for field in cursor.description]
-        rows = await cursor.fetchall()
+            fields = [field[0] for field in cursor.description]
+            rows = await cursor.fetchall()
 
-        cursor.close()
+            await cursor.close()
         a = [dict(zip(fields, row)) for row in rows]
         return a
 
     async def connect(self, connection_url, charset):
         """Connect to the database"""
-
         kwargs = parse_database_url(connection_url)
         if not (kwargs and kwargs['protocol'] == 'mysql'):
             raise TypeError("Connection protocol must be MySQL!")
@@ -98,8 +100,8 @@ class DatabaseConnection(object):
         self.host = kwargs.get('host', 'localhost')
         self.port = kwargs.get('port', 3306)
         self.user = kwargs.get('user', None)
-        kwargs['charset'] = charset
 
+        kwargs['charset'] = charset
         # can't pass protocol to MySQLdb
         del kwargs['protocol']
         # insert charset option
@@ -107,9 +109,9 @@ class DatabaseConnection(object):
         # add by yangmeaw
         kwargs['password'] = kwargs['passwd']
         del kwargs['passwd']
-        kwargs['loop'] = asyncio.get_event_loop()
 
-        self._db = await aiomysql.connect(**kwargs)
+        kwargs['loop'] = asyncio.get_event_loop()
+        self._db = await aiomysql.create_pool(**kwargs)
 
     def close(self):
         """Close the database connection."""
@@ -122,3 +124,26 @@ class DatabaseConnection(object):
 
 # Alias MySQL exception
 DatabaseError = pymysql.Error
+
+
+class PoolConnection:
+    pools = {}
+
+    @classmethod
+    async def get_pool(self, connection_url, charset):
+        """Connect to the database"""
+        # if PoolConnection.pools.get(connection_url):
+        #     return PoolConnection.pools.get(connection_url)
+
+        kwargs = parse_database_url(connection_url)
+        if not (kwargs and kwargs['protocol'] == 'mysql'):
+            raise TypeError("Connection protocol must be MySQL!")
+
+        del kwargs['protocol']
+        kwargs['charset'] = charset
+        kwargs['password'] = kwargs['passwd']
+        del kwargs['passwd']
+        kwargs['loop'] = asyncio.get_event_loop()
+
+        PoolConnection.pools[connection_url] = await aiomysql.create_pool(maxsize=5, **kwargs)
+        return PoolConnection.pools[connection_url]
