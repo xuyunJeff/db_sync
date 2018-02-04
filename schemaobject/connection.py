@@ -1,5 +1,8 @@
-import pymysql
+import asyncio
 import re
+
+import aiomysql
+import pymysql
 
 REGEX_RFC1738 = re.compile(r'''
             (?P<protocol>\w+)://
@@ -63,28 +66,28 @@ class DatabaseConnection(object):
         self.user = None
 
     @property
-    def version(self):
-        result = self.execute("SELECT VERSION() as version")
+    async def version(self):
+        result = await self.execute("SELECT VERSION() as version")
         return result[0]['version']
 
-    def execute(self, sql, values=None):
-        cursor = self._db.cursor()
+    async def execute(self, sql, values=None):
+        cursor = await self._db.cursor()
         # if isinstance(values, (basestring, unicode)):
         if isinstance(values, str):
             values = (values,)
-        cursor.execute(sql, values)
+        await cursor.execute(sql, values)
 
         if not cursor.rowcount:
             return None
 
         fields = [field[0] for field in cursor.description]
-        rows = cursor.fetchall()
+        rows = await cursor.fetchall()
 
         cursor.close()
         a = [dict(zip(fields, row)) for row in rows]
         return a
 
-    def connect(self, connection_url, charset):
+    async def connect(self, connection_url, charset):
         """Connect to the database"""
 
         kwargs = parse_database_url(connection_url)
@@ -101,7 +104,12 @@ class DatabaseConnection(object):
         del kwargs['protocol']
         # insert charset option
         kwargs['charset'] = charset
-        self._db = pymysql.connect(**kwargs)
+        # add by yangmeaw
+        kwargs['password'] = kwargs['passwd']
+        del kwargs['passwd']
+        kwargs['loop'] = asyncio.get_event_loop()
+
+        self._db = await aiomysql.connect(**kwargs)
 
     def close(self):
         """Close the database connection."""

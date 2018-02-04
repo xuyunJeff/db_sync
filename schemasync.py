@@ -6,6 +6,7 @@ import sys
 from schemaobject import connection, SchemaObject
 from syncdb import *
 from utils import *
+import asyncio
 
 __author__ = """
 Mitch Matuson
@@ -33,124 +34,121 @@ PATCH_TPL = """--
 %(data)s"""
 
 
-def parse_cmd_line(fn):
+def parse_cmd_line():
     """Parse the command line options and pass them to the application"""
 
-    def processor():
-        usage = """
-                %prog [options] <source> <target>
-                source/target format: mysql://user:pass@host:port/database"""
-        description = """
-                       A MySQL Schema Synchronization Utility
-                      """
-        parser = optparse.OptionParser(usage=usage,
-                                       description=description)
+    usage = """
+            %prog [options] <source> <target>
+            source/target format: mysql://user:pass@host:port/database"""
+    description = """
+                   A MySQL Schema Synchronization Utility
+                  """
+    parser = optparse.OptionParser(usage=usage,
+                                   description=description)
 
-        parser.add_option("-V", "--version",
-                          action="store_true",
-                          dest="show_version",
-                          default=False,
-                          help="show version and exit.")
+    parser.add_option("-V", "--version",
+                      action="store_true",
+                      dest="show_version",
+                      default=False,
+                      help="show version and exit.")
 
-        parser.add_option("-t", "--tables",
-                          dest="tables",
-                          help="sync multi tables.")
+    parser.add_option("-t", "--tables",
+                      dest="tables",
+                      help="sync multi tables.")
 
-        parser.add_option("-r", "--revision",
-                          action="store_true",
-                          dest="version_filename",
-                          default=False,
-                          help=("increment the migration script version number "
-                                "if a file with the same name already exists."))
+    parser.add_option("-r", "--revision",
+                      action="store_true",
+                      dest="version_filename",
+                      default=False,
+                      help=("increment the migration script version number "
+                            "if a file with the same name already exists."))
 
-        parser.add_option("-w", "--sync-views",
-                          dest="sync_views",
-                          action="store_true",
-                          default=False,
-                          help="sync the schema views.")
+    parser.add_option("-w", "--sync-views",
+                      dest="sync_views",
+                      action="store_true",
+                      default=False,
+                      help="sync the schema views.")
 
-        parser.add_option("-g", "--sync-triggers",
-                          dest="sync_triggers",
-                          action="store_true",
-                          default=False,
-                          help="sync the schema trigger.")
+    parser.add_option("-g", "--sync-triggers",
+                      dest="sync_triggers",
+                      action="store_true",
+                      default=False,
+                      help="sync the schema trigger.")
 
-        parser.add_option("-p", "--sync-procedure",
-                          dest="sync_procedure",
-                          action="store_true",
-                          default=False,
-                          help="sync the schema procedure.")
+    parser.add_option("-p", "--sync-procedure",
+                      dest="sync_procedure",
+                      action="store_true",
+                      default=False,
+                      help="sync the schema procedure.")
 
-        parser.add_option("-a", "--sync-auto-inc",
-                          dest="sync_auto_inc",
-                          action="store_true",
-                          default=False,
-                          help="sync the AUTO_INCREMENT value for each table.")
+    parser.add_option("-a", "--sync-auto-inc",
+                      dest="sync_auto_inc",
+                      action="store_true",
+                      default=False,
+                      help="sync the AUTO_INCREMENT value for each table.")
 
-        parser.add_option("-c", "--sync-comments",
-                          dest="sync_comments",
-                          action="store_true",
-                          default=False,
-                          help=("sync the COMMENT field for all "
-                                "tables AND columns"))
+    parser.add_option("-c", "--sync-comments",
+                      dest="sync_comments",
+                      action="store_true",
+                      default=False,
+                      help=("sync the COMMENT field for all "
+                            "tables AND columns"))
 
-        parser.add_option("-D", "--no-date",
-                          dest="no_date",
-                          action="store_true",
-                          default=False,
-                          help="removes the date from the file format ")
+    parser.add_option("-D", "--no-date",
+                      dest="no_date",
+                      action="store_true",
+                      default=False,
+                      help="removes the date from the file format ")
 
-        parser.add_option("--charset",
-                          dest="charset",
-                          default='utf8',
-                          help="set the connection charset, default: utf8")
+    parser.add_option("--charset",
+                      dest="charset",
+                      default='utf8',
+                      help="set the connection charset, default: utf8")
 
-        parser.add_option("--tag",
-                          dest="tag",
-                          help=("tag the migration scripts as <database>_<tag>."
-                                " Valid characters include [A-Za-z0-9-_]"))
+    parser.add_option("--tag",
+                      dest="tag",
+                      help=("tag the migration scripts as <database>_<tag>."
+                            " Valid characters include [A-Za-z0-9-_]"))
 
-        parser.add_option("--output-directory",
-                          dest="output_directory",
-                          default=os.getcwd(),
-                          help=("directory to write the migration scrips. "
-                                "The default is current working directory. "
-                                "Must use absolute path if provided."))
+    parser.add_option("--output-directory",
+                      dest="output_directory",
+                      default=os.getcwd(),
+                      help=("directory to write the migration scrips. "
+                            "The default is current working directory. "
+                            "Must use absolute path if provided."))
 
-        parser.add_option("--log-directory",
-                          dest="log_directory",
-                          help=("set the directory to write the log to. "
-                                "Must use absolute path if provided. "
-                                "Default is output directory. "
-                                "Log filename is schemasync.log"))
+    parser.add_option("--log-directory",
+                      dest="log_directory",
+                      help=("set the directory to write the log to. "
+                            "Must use absolute path if provided. "
+                            "Default is output directory. "
+                            "Log filename is schemasync.log"))
 
-        options, args = parser.parse_args(sys.argv[1:])
+    options, args = parser.parse_args(sys.argv[1:])
 
-        if options.show_version:
-            print(APPLICATION_NAME, __version__)
-            return 0
+    if options.show_version:
+        print(APPLICATION_NAME, __version__)
+        return 0
 
-        if (not args) or (len(args) != 2):
-            parser.print_help()
-            return 0
+    if (not args) or (len(args) != 2):
+        parser.print_help()
+        return 0
 
-        return fn(*args, **dict(version_filename=options.version_filename,
-                                tables=options.tables,
-                                output_directory=options.output_directory,
-                                log_directory=options.log_directory,
-                                no_date=options.no_date,
-                                tag=options.tag,
-                                charset=options.charset,
-                                sync_auto_inc=options.sync_auto_inc,
-                                sync_comments=options.sync_comments))
-
-    return processor
+    return args, dict(version_filename=options.version_filename,
+                      tables=options.tables,
+                      output_directory=options.output_directory,
+                      log_directory=options.log_directory,
+                      no_date=options.no_date,
+                      tag=options.tag,
+                      charset=options.charset,
+                      sync_auto_inc=options.sync_auto_inc,
+                      sync_comments=options.sync_comments)
 
 
-def app(sourcedb='', targetdb='', tables='', version_filename=False,
-        output_directory=None, log_directory=None, no_date=False,
-        tag=None, charset=None, sync_views=False, sync_procedures=False, sync_triggers=False, sync_auto_inc=False,
-        sync_comments=False):
+async def app(sourcedb='', targetdb='', tables='', version_filename=False,
+              output_directory=None, log_directory=None, no_date=False,
+              tag=None, charset=None, sync_views=False, sync_procedures=False, sync_triggers=False, sync_auto_inc=False,
+              sync_comments=False):
     """Main Application"""
 
     options = locals()
@@ -329,9 +327,10 @@ def app(sourcedb='', targetdb='', tables='', version_filename=False,
     return 0
 
 
-def main():
+async def main():
     try:
-        sys.exit(parse_cmd_line(app)())
+        args, argv = parse_cmd_line()
+        await app(*args, **argv)
     except connection.DatabaseError as e:
         logging.error("MySQL Error %d: %s" % (e.args[0], e.args[1]))
         sys.exit(1)
@@ -341,4 +340,18 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+
+'''
+-c
+--charset=utf8
+mysql://root:zhonglixuntaqianbaidu@202.61.86.189:5179/saasops_manage
+mysql://root:zhonglixuntaqianbaidu@202.61.86.189:5179/saasops_lb
+--tag
+202-61-86-189-tpre-200702
+--tables
+t_bs_area,t_bs_bank,t_bs_financialcode,t_cp_company,t_cp_site,t_cp_siteurl,t_gm_api,
+t_gm_apiprefix,t_gm_case,t_gm_caseapi,t_gm_cat,t_gm_code,t_gm_depot,t_gm_depotcat,
+t_gm_game,t_op_acttmpl,t_op_pay,t_op_payBankRelation,t_op_payWebSiteRelation
+'''
