@@ -110,8 +110,7 @@ class DatabaseConnection(object):
         kwargs['password'] = kwargs['passwd']
         del kwargs['passwd']
 
-        kwargs['loop'] = asyncio.get_event_loop()
-        self._db = await aiomysql.create_pool(**kwargs)
+        self._db = await aiomysql.create_pool(maxsize=8, **kwargs)
 
     def close(self):
         """Close the database connection."""

@@ -7,6 +7,7 @@ import sys
 from schemaobject import connection, SchemaObject
 from syncdb import *
 from utils import *
+from pprint import pprint
 
 __author__ = """
 Mitch Matuson

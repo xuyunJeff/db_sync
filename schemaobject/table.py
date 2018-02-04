@@ -64,6 +64,11 @@ async def table_schema_builder(database):
 
         t[name] = table
 
+        # await table.build_columns()
+        # await table.build_create()
+        # await table.build_indexes()
+        # await table.build_foreign_keys()
+
         tasks.extend([asyncio.ensure_future(table.build_columns()),
                       asyncio.ensure_future(table.build_create()),
                       asyncio.ensure_future(table.build_indexes()),
