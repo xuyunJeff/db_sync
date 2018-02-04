@@ -36,7 +36,6 @@ async def database_schema_builder(instance):
         return d
 
     tasks = []
-
     for db_info in databases:
         name = db_info['SCHEMA_NAME']
 
@@ -46,15 +45,15 @@ async def database_schema_builder(instance):
 
         d[name] = db
 
-        co1 = db.build_tables()
-        co2 = db.build_views()
-        co3 = db.build_procedures()
-        co4 = db.build_triggers()
+        cot = db.build_tables()
+        cov = db.build_views()
+        cop = db.build_procedures()
+        cor = db.build_triggers()
 
-        tasks.extend([asyncio.ensure_future(co1),
-                      asyncio.ensure_future(co2),
-                      asyncio.ensure_future(co3),
-                      asyncio.ensure_future(co4)])
+        tasks.extend([asyncio.ensure_future(cot),
+                      asyncio.ensure_future(cov),
+                      asyncio.ensure_future(cop),
+                      asyncio.ensure_future(cor)])
 
     await asyncio.wait(tasks)
     return d
