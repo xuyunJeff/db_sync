@@ -6,6 +6,7 @@ import sys
 from schemaobject import connection, SchemaObject
 from syncdb import *
 from utils import *
+import datetime
 
 __author__ = """
 Mitch Matuson
@@ -331,7 +332,7 @@ def app(sourcedb='', targetdb='', tables='', version_filename=False,
 
 def main():
     try:
-        sys.exit(parse_cmd_line(app)())
+        parse_cmd_line(app)()
     except connection.DatabaseError as e:
         logging.error("MySQL Error %d: %s" % (e.args[0], e.args[1]))
         sys.exit(1)
@@ -341,4 +342,9 @@ def main():
 
 
 if __name__ == "__main__":
+    start = datetime.datetime.now()
+    print(start)
     main()
+    end = datetime.datetime.now()
+    print(end)
+    print(end - start)
