@@ -59,7 +59,7 @@ class DatabaseConnection(object):
     """A lightweight wrapper around MySQLdb DB-API"""
 
     def __init__(self):
-        self._db = None
+        self._conpool = None
         self.db = None
         self.host = None
         self.port = None
@@ -72,7 +72,7 @@ class DatabaseConnection(object):
         return result[0]['version']
 
     async def execute(self, sql, values=None):
-        with (await self._db) as conn:
+        with (await self._conpool) as conn:
             cursor = await conn.cursor()
             # cursor = await self._db.cursor()
             # if isinstance(values, (basestring, unicode)):
@@ -110,12 +110,12 @@ class DatabaseConnection(object):
         kwargs['password'] = kwargs['passwd']
         del kwargs['passwd']
 
-        self._db = await aiomysql.create_pool(maxsize=8, **kwargs)
+        self._conpool = await aiomysql.create_pool(minsize=8, maxsize=8, **kwargs)
 
     def close(self):
         """Close the database connection."""
-        if self._db is not None:
-            self._db.close()
+        if self._conpool is not None:
+            self._conpool.close()
 
     def __del__(self):
         self.close()

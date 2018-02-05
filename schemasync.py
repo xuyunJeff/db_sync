@@ -360,7 +360,5 @@ mysql://root:zhonglixuntaqianbaidu@202.61.86.189:5179/saasops_lb
 --tag
 202-61-86-189-tpre-200702
 --tables
-t_bs_area,t_bs_bank,t_bs_financialcode,t_cp_company,t_cp_site,t_cp_siteurl,t_gm_api,
-t_gm_apiprefix,t_gm_case,t_gm_caseapi,t_gm_cat,t_gm_code,t_gm_depot,t_gm_depotcat,
-t_gm_game,t_op_acttmpl,t_op_pay,t_op_payBankRelation,t_op_payWebSiteRelation
+t_bs_area,t_bs_bank,t_bs_financialcode,t_cp_company,t_cp_site,t_cp_siteurl,t_gm_api,t_gm_apiprefix,t_gm_case,t_gm_caseapi,t_gm_cat,t_gm_code,t_gm_depot,t_gm_depotcat,t_gm_game,t_op_acttmpl,t_op_pay,t_op_payBankRelation,t_op_payWebSiteRelation
 '''
