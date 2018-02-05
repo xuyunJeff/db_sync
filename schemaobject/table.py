@@ -72,7 +72,9 @@ async def table_schema_builder(database):
         tasks.extend([asyncio.ensure_future(table.build_columns()),
                       asyncio.ensure_future(table.build_create()),
                       asyncio.ensure_future(table.build_indexes()),
-                      asyncio.ensure_future(table.build_foreign_keys())])
+                      # TODO 外键太慢,暂时注释掉
+                      # asyncio.ensure_future(table.build_foreign_keys())
+                      ])
 
     await asyncio.wait(tasks)
     return t

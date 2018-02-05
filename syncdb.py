@@ -96,14 +96,15 @@ def sync_table(from_table, to_table, options):
         # we'll drop indexes after we process foreign keys...
 
         # add new foreign keys and compare existing fks for changes
-        for p, r in sync_created_constraints(from_table.foreign_keys, to_table.foreign_keys):
-            yield (p, r)
-
-        for p, r in sync_modified_constraints(from_table.foreign_keys, to_table.foreign_keys):
-            yield (p, r)
-
-        for p, r in sync_dropped_constraints(from_table.foreign_keys, to_table.foreign_keys):
-            yield (p, r)
+        # TODO 外键太慢,暂时禁用
+        # for p, r in sync_created_constraints(from_table.foreign_keys, to_table.foreign_keys):
+        #     yield (p, r)
+        #
+        # for p, r in sync_modified_constraints(from_table.foreign_keys, to_table.foreign_keys):
+        #     yield (p, r)
+        #
+        # for p, r in sync_dropped_constraints(from_table.foreign_keys, to_table.foreign_keys):
+        #     yield (p, r)
 
         # drop remaining indexes
         for p, r in sync_dropped_constraints(from_table.indexes, to_table.indexes):

@@ -13,7 +13,7 @@ async def foreign_key_schema_builder(table):
 
     conn = table.parent.parent.connection
     fkeys = OrderedDict()
-
+    i=0
     async def _get_reference_rules(information_schema, table_name, constraint_name):
         """
         Returns tuple of strings (update_rule, delete_rule)
