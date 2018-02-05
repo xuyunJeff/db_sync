@@ -168,6 +168,7 @@ class Config:
 
     managedb = Database('saasops_manage')
 
+    paydb = Database('bottlepay')
     sitedb = {
         'dfdb': Database('saasops_df'),
         'lbdb': Database('saasops_lb'),
@@ -195,6 +196,9 @@ class Config:
     manageNodes = []
     manageNodes.append(Node(hkhost, managedb))
     manageNodes.append(Node(jphost, managedb))
+
+    payNodes = []
+    payNodes.append(Node(hkhost,paydb))
 
     sitesNodes = []
     for k, v in sitedb.items():
@@ -241,9 +245,12 @@ if __name__ == "__main__":
     allnodes.extend(Config.manageNodes)
     allnodes.extend(Config.sitesNodes)
 
-    pool = Pool(processes=5)
+    pool = Pool(processes=10)
     for node in allnodes:
         result = pool.apply_async(sync.tPrefSchemaSync, (Config.intraMngNode, node))
+
+    for pnode in Config.payNodes:
+        result = pool.apply_async(sync.allSchemaSync, (Config.intraTestNode, pnode))
 
     for snode in Config.sitesNodes:
         result = pool.apply_async(sync.allSchemaSync, (Config.intraTestNode, snode))
@@ -251,6 +258,10 @@ if __name__ == "__main__":
     for mnode in Config.manageNodes:
         result = pool.apply_async(sync.allSchemaSync, (Config.intraMngNode, mnode))
 
+    pool.close()
+    pool.join()
+
+    pool = Pool(processes=20)
     for alnode in allnodes:
         result = pool.apply_async(sync.tPrefDataSync, (Config.intraMngNode, alnode))
 
