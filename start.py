@@ -106,6 +106,16 @@ class SyncService:
                 out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
         return
 
+    def authPrefDataSync(self, fromnode, tonode):
+        for tbl in Config.auth_tables:
+            cmd = u"pt-table-sync --print --execute --charset=utf8 u={0},p={1},h={2},P={3},D={4},t={5} u={6},p={7},h={8},P={9},D={10},t={11}".format \
+                (fromnode.host.user, fromnode.host.passwd, fromnode.host.ip, fromnode.host.port, fromnode.db.name, tbl,
+                 tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name, tbl)
+            print(cmd)
+            if Config.isExecute is True:
+                out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+        return
+
     def tPrefSchemaSync(self, mngNode, tonode):
         tblstr = ",".join(Config.tables)
         iptag = str(tonode.host.ip).replace(".", "-")
@@ -169,6 +179,7 @@ class Config:
     managedb = Database('saasops_manage')
 
     paydb = Database('bottlepay')
+
     sitedb = {
         'dfdb': Database('saasops_df'),
         'lbdb': Database('saasops_lb'),
@@ -190,15 +201,17 @@ class Config:
         'verdb': Database('saasops_ver'),
         'xpjdb': Database('saasops_xpj'),
     }
+
     intraMngNode = Node(intrahost, managedb)
     intraTestNode = Node(intrahost, sitedb['testdb'])
+    intraPayNode = Node(intrahost, paydb)
 
     manageNodes = []
     manageNodes.append(Node(hkhost, managedb))
     manageNodes.append(Node(jphost, managedb))
 
     payNodes = []
-    payNodes.append(Node(hkhost,paydb))
+    payNodes.append(Node(hkhost, paydb))
 
     sitesNodes = []
     for k, v in sitedb.items():
@@ -230,6 +243,8 @@ class Config:
         't_op_payWebSiteRelation'
     ]
 
+    auth_tables=['sys_menu']
+
 
 if __name__ == "__main__":
     sync = SyncService()
@@ -245,12 +260,12 @@ if __name__ == "__main__":
     allnodes.extend(Config.manageNodes)
     allnodes.extend(Config.sitesNodes)
 
-    pool = Pool(processes=10)
+    pool = Pool(processes=5)
     for node in allnodes:
         result = pool.apply_async(sync.tPrefSchemaSync, (Config.intraMngNode, node))
 
     for pnode in Config.payNodes:
-        result = pool.apply_async(sync.allSchemaSync, (Config.intraTestNode, pnode))
+        result = pool.apply_async(sync.allSchemaSync, (Config.intraPayNode, pnode))
 
     for snode in Config.sitesNodes:
         result = pool.apply_async(sync.allSchemaSync, (Config.intraTestNode, snode))
@@ -264,6 +279,9 @@ if __name__ == "__main__":
     pool = Pool(processes=20)
     for alnode in allnodes:
         result = pool.apply_async(sync.tPrefDataSync, (Config.intraMngNode, alnode))
+
+    for alnode in Config.sitesNodes:
+        result = pool.apply_async(sync.authPrefDataSync, (Config.intraTestNode, alnode))
 
     pool.close()
     pool.join()
