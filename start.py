@@ -243,7 +243,11 @@ class Config:
         't_op_payWebSiteRelation'
     ]
 
-    auth_tables=['sys_menu']
+    auth_tables=['sys_menu',
+                 'sys_role',
+                 'sys_role_menu',
+                 'sys_user',
+                 'sys_user_role']
 
 
 if __name__ == "__main__":
