@@ -135,8 +135,10 @@ class ColumnSchema(object):
                 )):
             sql.append("CHARACTER SET %s COLLATE %s" % (self.charset, self.collation))
 
+        # TODO NOT NULL will cause invalid value
         if not self.null:
-            sql.append("NOT NULL")
+            # sql.append("NOT NULL")
+            sql.append("")
         else:
             sql.append("NULL")
 

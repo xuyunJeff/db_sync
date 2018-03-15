@@ -249,7 +249,6 @@ class Config:
                  'sys_user',
                  'sys_user_role']
 
-
 if __name__ == "__main__":
     sync = SyncService()
 
