@@ -1,7 +1,7 @@
 from schemaobject.collections import OrderedDict
 
 
-def index_schema_builder(table):
+async def index_schema_builder(table):
     """
     Returns a dictionary loaded with all of the indexes available in the table.
     ``table`` must be an instance of TableSchema.
@@ -13,7 +13,7 @@ def index_schema_builder(table):
     conn = table.parent.parent.connection
 
     idx = OrderedDict()
-    indexes = conn.execute("SHOW INDEXES FROM `%s`.`%s`" % (table.parent.name, table.name))
+    indexes = await conn.execute("SHOW INDEXES FROM `%s`.`%s`" % (table.parent.name, table.name))
 
     if not indexes:
         return idx

@@ -4,11 +4,12 @@ from schemaobject.column import column_schema_builder
 from schemaobject.index import index_schema_builder
 from schemaobject.foreignkey import foreign_key_schema_builder
 from schemaobject.option import SchemaOption
+import asyncio
 
 REGEX_MULTI_SPACE = re.compile('\s\s+')
 
 
-def table_schema_builder(database):
+async def table_schema_builder(database):
     """
     Returns a dictionary loaded with all of the tables available in the database.
     ``database`` must be an instance of DatabaseSchema.
@@ -32,11 +33,12 @@ def table_schema_builder(database):
         table_names = list(map(lambda s: '\'%s\'' % s, table_names.split(',')))
         sql += "AND TABLE_NAME IN (%s)" % ','.join(table_names)
 
-    tables = conn.execute(sql % database.name)
+    tables = await conn.execute(sql % database.name)
 
     if not tables:
         return t
 
+    tasks = []
     for table_info in tables:
 
         name = table_info['TABLE_NAME']
@@ -61,6 +63,20 @@ def table_schema_builder(database):
         table.options['comment'] = SchemaOption('COMMENT', table_info['TABLE_COMMENT'])
 
         t[name] = table
+
+        # await table.build_columns()
+        # await table.build_create()
+        # await table.build_indexes()
+        # await table.build_foreign_keys()
+
+        tasks.extend([asyncio.ensure_future(table.build_columns()),
+                      asyncio.ensure_future(table.build_create()),
+                      asyncio.ensure_future(table.build_indexes()),
+                      # TODO 外键太慢,暂时注释掉
+                      # asyncio.ensure_future(table.build_foreign_keys())
+                      ])
+
+    await asyncio.wait(tasks)
     return t
 
 
@@ -113,12 +129,12 @@ class TableSchema(object):
         self.parent = parent
         self.name = name
         self._options = None
-        self._columns = None
-        self._indexes = None
-        self._foreign_keys = None
+        self.columns = None
+        self.indexes = None
+        self.foreign_keys = None
+        self._create = None
 
-    @property
-    def columns(self):
+    async def build_columns(self):
         """
         Lazily loaded dictionary of all the columns within this table. See ColumnSchema for usage
 
@@ -127,12 +143,11 @@ class TableSchema(object):
           >>> schema.databases['sakila'].tables['rental'].columns.keys()
           ['rental_id', 'rental_date', 'inventory_id', 'customer_id', 'return_date', 'staff_id', 'last_update'
         """
-        if self._columns is None:
-            self._columns = column_schema_builder(table=self)
-        return self._columns
+        if self.columns is None:
+            self.columns = await column_schema_builder(table=self)
+        return self.columns
 
-    @property
-    def indexes(self):
+    async def build_indexes(self):
         """
         Lazily loaded dictionary of all the indexes within this table. See IndexSchema for usage
 
@@ -141,12 +156,11 @@ class TableSchema(object):
           >>> schema.databases['sakila'].tables['rental'].indexes.keys()
           ['PRIMARY', 'rental_date', 'idx_fk_inventory_id', 'idx_fk_customer_id', 'idx_fk_staff_id']
         """
-        if self._indexes is None:
-            self._indexes = index_schema_builder(table=self)
-        return self._indexes
+        if self.indexes is None:
+            self.indexes = await index_schema_builder(table=self)
+        return self.indexes
 
-    @property
-    def foreign_keys(self):
+    async def build_foreign_keys(self):
         """
         Lazily loaded dictionary of all the foreign keys within this table. See ForeignKeySchema for usage
 
@@ -155,9 +169,9 @@ class TableSchema(object):
           >>> schema.databases['sakila'].tables['rental'].foreign_keys.keys()
           ['fk_rental_customer', 'fk_rental_inventory', 'fk_rental_staff']
         """
-        if self._foreign_keys is None:
-            self._foreign_keys = foreign_key_schema_builder(table=self)
-        return self._foreign_keys
+        if self.foreign_keys is None:
+            self.foreign_keys = await foreign_key_schema_builder(table=self)
+        return self.foreign_keys
 
     @property
     def options(self):
@@ -185,6 +199,9 @@ class TableSchema(object):
         return "ALTER TABLE `%s`" % (self.name)
 
     def create(self):
+        return self._create
+
+    async def build_create(self):
         """
         Generate the SQL to create a this table
           >>> schema.databases['sakila'].tables['rental'].create()
@@ -207,10 +224,10 @@ class TableSchema(object):
           ENGINE=InnoDB DEFAULT CHARSET=utf8;'
         """
         cursor = self.parent.parent.connection
-        result = cursor.execute("SHOW CREATE TABLE `%s`.`%s`" % (self.parent.name, self.name))
+        result = await cursor.execute("SHOW CREATE TABLE `%s`.`%s`" % (self.parent.name, self.name))
         sql = result[0]['Create Table'] + ';'
         sql = sql.replace('\n', '')
-        return REGEX_MULTI_SPACE.sub(' ', sql)
+        self._create = REGEX_MULTI_SPACE.sub(' ', sql)
 
     def drop(self):
         """

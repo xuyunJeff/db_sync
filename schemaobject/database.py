@@ -4,9 +4,10 @@ from schemaobject.procedure import procedure_schema_builder
 from schemaobject.collections import OrderedDict
 from schemaobject.trigger import trigger_schema_builder
 from schemaobject.view import view_schema_builder
+import asyncio
 
 
-def database_schema_builder(instance):
+async def database_schema_builder(instance):
     """
     Returns a dictionary loaded with all of the databases availale on
     the MySQL instance. ``instance`` must be an instance SchemaObject.
@@ -29,11 +30,12 @@ def database_schema_builder(instance):
     else:
         params = None
 
-    databases = conn.execute(sql, (params,))
+    databases = await conn.execute(sql, (params,))
 
     if not databases:
         return d
 
+    tasks = []
     for db_info in databases:
         name = db_info['SCHEMA_NAME']
 
@@ -43,6 +45,17 @@ def database_schema_builder(instance):
 
         d[name] = db
 
+        cot = db.build_tables()
+        cov = db.build_views()
+        cop = db.build_procedures()
+        cor = db.build_triggers()
+
+        tasks.extend([asyncio.ensure_future(cot),
+                      asyncio.ensure_future(cov),
+                      asyncio.ensure_future(cop),
+                      asyncio.ensure_future(cor)])
+
+    await asyncio.wait(tasks)
     return d
 
 
@@ -71,32 +84,30 @@ class DatabaseSchema(object):
         self.parent = parent
         self.name = name
         self._options = None
-        self._tables = None
-        self._procedures = None
-        self._triggers = None
-        self._views = None
+        self.tables = None
+        self.views = None
+        self.procedures = None
+        self.triggers = None
 
-    @property
-    def tables(self):
+    async def build_tables(self):
         """
         Lazily loaded dictionary of all the tables within this database. See TableSchema for usage
           '>>> len(schema.databases['sakila'].tables)
           16
         """
-        if self._tables is None:
-            self._tables = table_schema_builder(database=self)
+        if self.tables is None:
+            self.tables = await table_schema_builder(database=self)
 
-        return self._tables
+        return self.tables
 
-    @property
-    def views(self):
+    async def build_views(self):
         """
         Lazily loaded dictionnary of all the views within this database. See ViewSchema for usage
         """
-        if self._views is None:
-            self._views = view_schema_builder(database=self)
+        if self.views is None:
+            self_views = await view_schema_builder(database=self)
 
-        return self._views
+        return self.views
 
     @property
     def options(self):
@@ -111,25 +122,23 @@ class DatabaseSchema(object):
 
         return self._options
 
-    @property
-    def procedures(self):
+    async def build_procedures(self):
         """
         Lazily loaded dictionnary of all the procedures within this database. See ProcedureSchema for usage.
         """
-        if self._procedures is None:
-            self._procedures = procedure_schema_builder(database=self)
+        if self.procedures is None:
+            self.procedures = await procedure_schema_builder(database=self)
 
-        return self._procedures
+        return self.procedures
 
-    @property
-    def triggers(self):
+    async def build_triggers(self):
         """
         Lazily loaded dictionnary of all the triggers within this database. See TriggerSchema for usage.
         """
-        if self._triggers is None:
-            self._triggers = trigger_schema_builder(database=self)
+        if self.triggers is None:
+            self.triggers = await trigger_schema_builder(database=self)
 
-        return self._triggers
+        return self.triggers
 
     def select(self):
         """

@@ -1,7 +1,7 @@
 from schemaobject.collections import OrderedDict
 
 
-def foreign_key_schema_builder(table):
+async def foreign_key_schema_builder(table):
     """
     Returns a dictionary loaded with all of the foreign keys available in the table.
     ``table`` must be an instance of TableSchema.
@@ -13,8 +13,8 @@ def foreign_key_schema_builder(table):
 
     conn = table.parent.parent.connection
     fkeys = OrderedDict()
-
-    def _get_reference_rules(information_schema, table_name, constraint_name):
+    i=0
+    async def _get_reference_rules(information_schema, table_name, constraint_name):
         """
         Returns tuple of strings (update_rule, delete_rule)
         (None,None) if constraint not found
@@ -27,7 +27,7 @@ def foreign_key_schema_builder(table):
             FROM information_schema.REFERENTIAL_CONSTRAINTS
             WHERE CONSTRAINT_SCHEMA = '%s' and TABLE_NAME = '%s' and CONSTRAINT_NAME = '%s'
             """
-        result = conn.execute(sql % (information_schema, table_name, constraint_name))
+        result = await conn.execute(sql % (information_schema, table_name, constraint_name))
         if result:
             return result[0]['UPDATE_RULE'], result[0]['DELETE_RULE']
         else:
@@ -45,7 +45,7 @@ def foreign_key_schema_builder(table):
             AND K.TABLE_NAME='%s'
             AND K.REFERENCED_TABLE_NAME is not null
             """
-    constraints = conn.execute(sql % (table.parent.name, table.name))
+    constraints = await conn.execute(sql % (table.parent.name, table.name))
 
     if not constraints:
         return fkeys
@@ -60,7 +60,7 @@ def foreign_key_schema_builder(table):
             fk_item.table_name = fk['TABLE_NAME']
             fk_item.referenced_table_schema = fk['REFERENCED_TABLE_SCHEMA']
             fk_item.referenced_table_name = fk['REFERENCED_TABLE_NAME']
-            fk_item.update_rule, fk_item.delete_rule = _get_reference_rules(fk_item.table_schema,
+            fk_item.update_rule, fk_item.delete_rule = await _get_reference_rules(fk_item.table_schema,
                                                                             fk_item.table_name, fk_item.symbol)
             fkeys[n] = fk_item
 

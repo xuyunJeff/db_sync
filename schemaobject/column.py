@@ -1,7 +1,7 @@
 from schemaobject.collections import OrderedDict
 
 
-def column_schema_builder(table):
+async def column_schema_builder(table):
     """
     Returns a dictionary loaded with all of the columns availale in the table.
     ``table`` must be an instance of TableSchema.
@@ -22,7 +22,7 @@ def column_schema_builder(table):
           AND TABLE_NAME='%s'
           ORDER BY ORDINAL_POSITION
           """
-    columns = conn.execute(sql % (table.parent.name, table.name))
+    columns = await conn.execute(sql % (table.parent.name, table.name))
     if not columns:
         return cols
 
@@ -135,13 +135,15 @@ class ColumnSchema(object):
                 )):
             sql.append("CHARACTER SET %s COLLATE %s" % (self.charset, self.collation))
 
+        # TODO NOT NULL will cause invalid value
         if not self.null:
-            sql.append("NOT NULL")
+            # sql.append("NOT NULL")
+            sql.append("")
         else:
             sql.append("NULL")
 
         if self.default is not None and isinstance(self.default, str) and self.default is not 'CURRENT_TIMESTAMP':
-            sql.append("DEFAULT '%s'" % self.default)
+            sql.append("DEFAULT %s" % self.default)
         elif self.default is not None:
             sql.append("DEFAULT %s" % self.default)
 
