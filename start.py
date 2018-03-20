@@ -106,8 +106,8 @@ class SyncService:
                 out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
         return
 
-    def authPrefDataSync(self, fromnode, tonode):
-        for tbl in Config.auth_tables:
+    def custPrefDataSync(self, fromnode, tonode):
+        for tbl in Config.cust_tables:
             cmd = u"pt-table-sync --print --execute --charset=utf8 u={0},p={1},h={2},P={3},D={4},t={5} u={6},p={7},h={8},P={9},D={10},t={11}".format \
                 (fromnode.host.user, fromnode.host.passwd, fromnode.host.ip, fromnode.host.port, fromnode.db.name, tbl,
                  tonode.host.user, tonode.host.passwd, tonode.host.ip, tonode.host.port, tonode.db.name, tbl)
@@ -243,7 +243,7 @@ class Config:
         't_op_payWebSiteRelation'
     ]
 
-    auth_tables=[]
+    cust_tables=[]
 
 if __name__ == "__main__":
     sync = SyncService()
@@ -280,7 +280,7 @@ if __name__ == "__main__":
         result = pool.apply_async(sync.tPrefDataSync, (Config.intraMngNode, alnode))
 
     for alnode in Config.sitesNodes:
-        result = pool.apply_async(sync.authPrefDataSync, (Config.intraTestNode, alnode))
+        result = pool.apply_async(sync.custPrefDataSync, (Config.intraTestNode, alnode))
 
     pool.close()
     pool.join()
