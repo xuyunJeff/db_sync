@@ -243,7 +243,7 @@ class Config:
         't_op_payWebSiteRelation'
     ]
 
-    auth_tables=['t_cp_siteurl']
+    auth_tables=[]
 
 if __name__ == "__main__":
     sync = SyncService()
