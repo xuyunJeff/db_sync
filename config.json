@@ -1,0 +1,45 @@
+{
+  "hosts": [
+    {
+      "name": "intra30",
+      "ip": "",
+      "port": "3306",
+      "user": "root",
+      "passwd": ""
+    },
+    {
+      "name": "hk-test01",
+      "ip": "",
+      "port": "5174",
+      "user": "root",
+      "passwd": ""
+    },
+    {
+      "name": "jp40",
+      "ip": "",
+      "port": "5174",
+      "user": "root",
+      "passwd": ""
+    }
+  ],
+  "sync": [
+    {
+      "from": "saasops_manage@intra30",
+      "to": [
+        "saasops_manage@jp40"
+      ],
+      "tables": [],
+      "schema": true,
+      "data": false
+    },
+    {
+      "from": "saasops_test@intra30",
+      "to": [
+        "saasops_test@intra30"
+      ],
+      "tables": ["t_*"],
+      "schema": true,
+      "data": false
+    }
+  ]
+}
