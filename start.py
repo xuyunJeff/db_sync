@@ -3,35 +3,7 @@
 import subprocess
 import time
 from multiprocessing import Pool
-
-
-class Host:
-    user = ''
-    passwd = ''
-    ip = ''
-    port = ''
-
-    def __init__(self, user, passwd, ip, port):
-        self.user = user
-        self.passwd = passwd
-        self.ip = ip
-        self.port = port
-
-
-class Database:
-    name = ''
-
-    def __init__(self, name):
-        self.name = name
-
-
-class Node:
-    host = ''
-    db = ''
-
-    def __init__(self, host, database):
-        self.host = host
-        self.db = database
+from SynConfig import Host,Database,Node
 
 
 class SyncService:

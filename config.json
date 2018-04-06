@@ -1,45 +1,37 @@
 {
-  "hosts": [
-    {
-      "name": "intra30",
-      "ip": "",
+  "hosts": {
+    "intra30": {
+      "ip": "192.168.5.30",
       "port": "3306",
       "user": "root",
-      "passwd": ""
+      "passwd": "zhonglixuntaqianbaidu"
     },
-    {
-      "name": "hk-test01",
-      "ip": "",
+    "hk-test01": {
+      "ip": "202.61.86.189",
       "port": "5174",
       "user": "root",
-      "passwd": ""
-    },
-    {
-      "name": "jp40",
-      "ip": "",
-      "port": "5174",
-      "user": "root",
-      "passwd": ""
+      "passwd": "zhonglixuntaqianbaidu"
     }
-  ],
+  },
   "sync": [
     {
-      "from": "saasops_manage@intra30",
-      "to": [
-        "saasops_manage@jp40"
+      "from_node": "saasops_manage@intra30",
+      "to_nodes": [
+        "saasops_manage@hk-test01"
       ],
       "tables": [],
-      "schema": true,
-      "data": false
+      "inc_schema": "True",
+      "inc_data": "False"
     },
     {
-      "from": "saasops_test@intra30",
-      "to": [
-        "saasops_test@intra30"
+      "from_node": "saasops_test@intra30",
+      "to_nodes": [
+        "saasops_veb@intra30",
+        "saasops_df@intra30"
       ],
-      "tables": ["t_*"],
-      "schema": true,
-      "data": false
+      "tables": [],
+      "inc_schema": "True",
+      "inc_data": "False"
     }
   ]
 }
