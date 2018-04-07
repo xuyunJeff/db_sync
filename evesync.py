@@ -147,24 +147,30 @@ PATCH_TPL = """--
 
 
 async def app(sourcedb='', targetdb='', tables='', version_filename=False,
-              output_directory=None, log_directory=None, no_date=False,
+              output_directory='', log_directory='', no_date=False,
               tag=None, charset=None, sync_views=False, sync_procedures=False, sync_triggers=False, sync_auto_inc=False,
               sync_comments=False):
     """Main Application"""
 
     options = locals()
 
+    if output_directory is None: output_directory = os.getcwd()
+    if log_directory is None: log_directory = os.getcwd()
+
     if not os.path.isabs(output_directory):
-        print("Error: Output directory must be an absolute path. Quiting.")
+        print
+        "Error: Output directory must be an absolute path. Quiting."
         return 1
 
     if not os.path.isdir(output_directory):
-        print("Error: Output directory does not exist. Quiting.")
+        print
+        "Error: Output directory does not exist. Quiting."
         return 1
 
     if not log_directory or not os.path.isdir(log_directory):
         if log_directory:
-            print("Log directory does not exist, writing log to %s" % output_directory)
+            print
+            "Log directory does not exist, writing log to %s" % output_directory
         log_directory = output_directory
 
     logging.basicConfig(filename=os.path.join(log_directory, LOG_FILENAME),

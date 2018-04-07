@@ -17,9 +17,28 @@
     {
       "from_node": "saasops_manage@intra30",
       "to_nodes": [
+        "saasops_test@intra30",
         "saasops_manage@hk-test01"
       ],
-      "tables": [],
+      "tables": [
+        "t_bs_area",
+        "t_bs_bank",
+        "t_bs_financialcode",
+        "t_cp_company",
+        "t_cp_site",
+        "t_cp_siteurl",
+        "t_gm_api",
+        "t_gm_apiprefix",
+        "t_gm_cat",
+        "t_gm_code",
+        "t_gm_depot",
+        "t_gm_depotcat",
+        "t_gm_game",
+        "t_op_acttmpl",
+        "t_op_pay",
+        "t_op_payBankRelation",
+        "t_op_payWebSiteRelation"
+      ],
       "inc_schema": "True",
       "inc_data": "False"
     },

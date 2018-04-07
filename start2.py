@@ -1,5 +1,6 @@
 import argparse
 import json
+from evesync import eve_db_sync
 
 
 def dburl_from_node(hosts, node):
@@ -28,9 +29,12 @@ def dburls_from_syncconf(sync_item):
         to_dburl = dburl_from_node(hosts, to_node)
         yield from_dburl, to_dburl
 
-def conf2args(sync_conf):
+
+def conf2args():
     for sync_item in sync_conf['sync']:
-        pass
+        for from_dburl, to_dburl in dburls_from_syncconf(sync_item):
+            yield from_dburl,to_dburl,sync_item["tables"]
+
 
 # mysql://root:zhonglixuntaqianbaidu@202.61.86.189:5179saasops_manage
 
@@ -45,4 +49,7 @@ if __name__ == "__main__":
     with args.f as file:
         sync_conf = json.load(file)
 
-    conf2args(sync_conf)
+    for from_dburl, to_dburl, tables in conf2args():
+        tablestr = ','.join(tables)
+        eve_db_sync(from_dburl,to_dburl,tables)
+
