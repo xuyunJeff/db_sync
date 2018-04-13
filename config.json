@@ -11,6 +11,12 @@
       "port": "5179",
       "user": "root",
       "passwd": "zhonglixuntaqianbaidu"
+    },
+    "jp40": {
+      "ip": "161.202.230.40",
+      "port": "5179",
+      "user": "root",
+      "passwd": "zhonglixuntaqianbaidu"
     }
   },
   "sync": [
@@ -40,8 +46,18 @@
         "t_op_payBankRelation",
         "t_op_payWebSiteRelation"
       ],
-      "inc_schema": "True",
-      "inc_data": "True"
+      "inc_schema": true,
+      "inc_data": true
+    },
+    {
+      "from_node": "saasops_test@intra30",
+      "to_nodes": [
+        "saasops_veb@intra30",
+        "saasops_df@intra30"
+      ],
+      "tables": [],
+      "inc_schema": true,
+      "inc_data": false
     }
   ]
 }
