@@ -158,28 +158,25 @@ async def app(sourcedb='', targetdb='', tables='', version_filename=False,
     if log_directory is None: log_directory = os.getcwd()
 
     if not os.path.isabs(output_directory):
-        print
-        "Error: Output directory must be an absolute path. Quiting."
+        print("Error: Output directory must be an absolute path. Quiting.")
         return 1
 
     if not os.path.isdir(output_directory):
-        print
-        "Error: Output directory does not exist. Quiting."
+        print("Error: Output directory does not exist. Quiting.")
         return 1
 
     if not log_directory or not os.path.isdir(log_directory):
         if log_directory:
-            print
-            "Log directory does not exist, writing log to %s" % output_directory
+            print("Log directory does not exist, writing log to %s" % output_directory)
         log_directory = output_directory
 
-    logging.basicConfig(filename=os.path.join(log_directory, LOG_FILENAME),
-                        level=logging.INFO,
-                        format='[%(levelname)s  %(asctime)s] %(message)s')
-
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    logging.getLogger('').addHandler(console)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='[%(levelname)s  %(asctime)s] %(message)s')
+    # filename = os.path.join(log_directory, LOG_FILENAME),
+    # console = logging.StreamHandler()
+    # console.setLevel(logging.DEBUG)
+    # logging.getLogger('').addHandler(console)
 
     if not sourcedb:
         logging.error("Source database URL not provided. Exiting.")
@@ -323,8 +320,10 @@ async def app(sourcedb='', targetdb='', tables='', version_filename=False,
         try:
             p_buffer.save()
             r_buffer.save()
-            logging.info("Migration scripts created for mysql://%s/%s\n"
-                         "Patch Script: %s\nRevert Script: %s"
+            logging.info('''
+                        Migration scripts created for mysql://%s/%s
+                        Patch Script: %s
+                        Revert Script: %s'''
                          % (target_obj.host, target_obj.selected.name,
                             p_buffer.name, r_buffer.name))
         except OSError as e:
@@ -350,12 +349,12 @@ async def app(sourcedb='', targetdb='', tables='', version_filename=False,
 
 def eve_db_sync(sourcedb='', targetdb='', tables='', version_filename=False,
                 output_directory=None, log_directory=None, no_date=False,
-                tag=None, charset=None, sync_views=False, sync_procedures=False, sync_triggers=False,
-                sync_auto_inc=False,
+                tag=None, charset=False, sync_views=False, sync_procedures=False, sync_triggers=False,
+                sync_auto_inc=True,
                 sync_comments=False):
     start = datetime.datetime.now()
-    loop = asyncio.get_event_loop()
 
+    loop = asyncio.get_event_loop()
     loop.run_until_complete(app(sourcedb, targetdb, tables, version_filename,
                                 output_directory, log_directory, no_date,
                                 tag, charset, sync_views, sync_procedures, sync_triggers,
@@ -363,7 +362,7 @@ def eve_db_sync(sourcedb='', targetdb='', tables='', version_filename=False,
                                 sync_comments))
 
     deltar = datetime.datetime.now() - start
-    print(deltar)
+    # print(deltar)
 
 
 '''

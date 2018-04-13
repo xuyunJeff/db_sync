@@ -8,7 +8,7 @@
     },
     "hk-test01": {
       "ip": "202.61.86.189",
-      "port": "5174",
+      "port": "5179",
       "user": "root",
       "passwd": "zhonglixuntaqianbaidu"
     }
@@ -18,7 +18,8 @@
       "from_node": "saasops_manage@intra30",
       "to_nodes": [
         "saasops_test@intra30",
-        "saasops_manage@hk-test01"
+        "saasops_veb@intra30",
+        "saasops_df@intra30"
       ],
       "tables": [
         "t_bs_area",
@@ -40,17 +41,7 @@
         "t_op_payWebSiteRelation"
       ],
       "inc_schema": "True",
-      "inc_data": "False"
-    },
-    {
-      "from_node": "saasops_test@intra30",
-      "to_nodes": [
-        "saasops_veb@intra30",
-        "saasops_df@intra30"
-      ],
-      "tables": [],
-      "inc_schema": "True",
-      "inc_data": "False"
+      "inc_data": "True"
     }
   ]
 }

@@ -1,9 +1,13 @@
 import argparse
 import json
 from evesync import eve_db_sync
+import time
+import datetime
+from multiprocessing import Pool
+import subprocess
 
 
-def dburl_from_node(hosts, node):
+def node_to_dburl(hosts, node):
     database, host = node.split('@')
     host_user = hosts[host]['user']
     host_passwd = hosts[host]['passwd']
@@ -19,24 +23,61 @@ def dburl_from_node(hosts, node):
     return dburl
 
 
-def dburls_from_syncconf(sync_item):
-    # tables = sync_conf['tables']
-    # inc_schema = sync_conf['inc_schema']
-    # inc_data = syn['inc_data']
+def dburl_to_node(dburl):
+    strarr = dburl.split(":")
+    user = strarr[1][2:]
+    passwd, ip = strarr[2].split("@")
+    port, database = strarr[3].split("/")
+    return user, passwd, ip, port, database
+
+
+def args_sync_item(sync_item):
     hosts = sync_conf['hosts']
-    from_dburl = dburl_from_node(hosts, sync_item['from_node'])
+    from_dburl = node_to_dburl(hosts, sync_item['from_node'])
     for to_node in sync_item['to_nodes']:
-        to_dburl = dburl_from_node(hosts, to_node)
-        yield from_dburl, to_dburl
+        to_dburl = node_to_dburl(hosts, to_node)
+        yield from_dburl, to_dburl, sync_item["tables"]
 
 
 def conf2args():
     for sync_item in sync_conf['sync']:
-        for from_dburl, to_dburl in dburls_from_syncconf(sync_item):
-            yield from_dburl,to_dburl,sync_item["tables"]
+        for from_dburl, to_dburl in args_sync_item(sync_item):
+            yield from_dburl, to_dburl, sync_item["tables"]
 
 
 # mysql://root:zhonglixuntaqianbaidu@202.61.86.189:5179saasops_manage
+
+def build_tag(to_dburl):
+    pos = to_dburl.index('@')
+    iptag = to_dburl[pos + 1:to_dburl.index(':', pos)].replace('.', '-')
+    timetag = time.strftime("%H%M%S", time.localtime())
+    tag = "%s-%s" % (iptag, timetag)
+    return tag
+
+
+def restore(dburl, filename):
+    user, passwd, ip, port, database = dburl_to_node(dburl)
+    cmd = 'mysql -u{0} -p{1} -h{2} -P{3} {4} < {5}'.format(
+        user,
+        passwd,
+        ip,
+        port,
+        database,
+        filename)
+    print(cmd)
+    out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+
+
+def datasync(from_url, to_url, tables):
+    fuser, fpasswd, fip, fport, fdatabase = dburl_to_node(from_url)
+    tuser, tpasswd, tip, tport, tdatabase = dburl_to_node(to_url)
+    for tbl in tables:
+        cmd = u"pt-table-sync --print --execute --charset=utf8 u={0},p={1},h={2},P={3},D={4},t={5} u={6},p={7},h={8},P={9},D={10},t={11}".format \
+            (fuser, fpasswd, fip, fport, fdatabase, tbl,
+             tuser, tpasswd, tip, tport, tdatabase, tbl)
+        print(cmd)
+        out, err = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+    return
 
 
 if __name__ == "__main__":
@@ -49,7 +90,14 @@ if __name__ == "__main__":
     with args.f as file:
         sync_conf = json.load(file)
 
-    for from_dburl, to_dburl, tables in conf2args():
-        tablestr = ','.join(tables)
-        eve_db_sync(from_dburl,to_dburl,tables)
-
+    for sync_item in sync_conf['sync']:
+        for from_dburl, to_dburl, tables in args_sync_item(sync_item):
+            tablestr = ','.join(tables)
+            tag = build_tag(to_dburl)
+            user, passwd, ip, port, database = dburl_to_node(to_dburl)
+            filename = ("{0}_{1}.{2}.patch.sql".format(database, tag, time.strftime("%Y%m%d", time.localtime())))
+            eve_db_sync(from_dburl, to_dburl, tablestr, tag=tag)
+            if sync_item['inc_schema']:
+                restore(to_dburl, filename)
+            if sync_item['inc_data']:
+                datasync(from_dburl, to_dburl, tables)
