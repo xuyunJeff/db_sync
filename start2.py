@@ -1,10 +1,9 @@
 import argparse
 import json
-from evesync import eve_db_sync
-import time
-import datetime
-from multiprocessing import Pool
 import subprocess
+import time
+
+from evesync import eve_db_sync
 
 
 def node_to_dburl(hosts, node):
